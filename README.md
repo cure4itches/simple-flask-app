@@ -12,3 +12,11 @@ IMAGE_NAME="simple-webapp"
 IMAGE_TAG="latest"
 docker build --tag ${IMAGE_NAME}:${IMAGE_TAG} .
 ```
+# 3. How to Run
+``` bash
+WEBAPP_PORT=5000
+WEBAPP_NAME="webapp-test"
+IMAGE_NAME="simple-webapp"
+IMAGE_TAG="latest"
+docker run -p ${WEBAPP_PORT}:5000 --name ${WEBAPP_NAME} -d ${IMAGE_NAME}:${IMAGE_TAG}
+```
