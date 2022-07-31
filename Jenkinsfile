@@ -1,50 +1,57 @@
 pipeline {
   environment {
     imageBaseName = "arm7tdmi/simple-flask-webapp"
-    regCred = 'dockerhub'
-    dockerImage = ''
   }
   agent {
     kubernetes {
-      defaultContainer 'jnlp'
-      yamlFile 'agent-pod.yaml'
+      yaml """
+kind: Pod
+metadata:
+  name: agent
+spec:
+  containers:
+  - name: git
+    image: alpine/git:v2.36.2
+    imagePullPolicy: Always
+    command:
+    - cat
+    tty: true
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest
+    imagePullPolicy: Always
+    command:
+    - /busybox/cat
+    tty: true
+    volumeMounts:
+      - name: kaniko-secret
+        mountPath: /kaniko/.docker
+  volumes:
+  - name: kaniko-secret
+    secret:
+      secretName: regcred
+      items:
+      - key: .dockerconfigjson
+        path: config.json
+      """
     }
   }
   stages {
-    stage('Checkout Repository') {
+    stage('Checkout') {
       steps {
-        container('git'){
-          git([url: 'https://github.com/cure4itches/simple-flask-app', branch: 'main'])
+        container('git') {
+          checkout scm
         }
       }
     }
-
-    stage('Build Image') {
-      steps{
-        container('docker'){
-          script {
-            dockerImage = docker.build imageBaseName
-          }
-        }
-      }
-    }
-    stage('Push Image') {
-      steps{
-        container('docker'){
-          script {
-            docker.withRegistry( '', regCred ) {
-              dockerImage.push("$BUILD_NUMBER")
-              dockerImage.push('latest')
-            }
-          }
-        }
-      }
-    }
-    stage('Clean Up') {
-      steps{
-        container('docker'){
-          sh "docker rmi $imageBaseName:$BUILD_NUMBER"
-          sh "docker rmi $imagename:latest"
+    stage('Build') {
+      steps {
+        container(name: 'kaniko', shell: '/busybox/sh') {
+          sh "\
+            /kaniko/executor \
+            --git branch=main \
+            --context=dir://${env.WORKSPACE} \
+            --destination=${env.imageBaseName}:${env.BUILD_NUMBER} \
+          "
         }
       }
     }
