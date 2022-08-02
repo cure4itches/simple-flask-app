@@ -50,7 +50,7 @@ spec:
             /kaniko/executor \
             --git branch=main \
             --context=dir://${env.WORKSPACE} \
-            --destination=${env.imageBaseName}:${env.BUILD_NUMBER} \
+            --destination=${env.imageBaseName}:${env.BRANCH_NAME}-${env.BUILD_NUMBER} \
           "
         }
       }
