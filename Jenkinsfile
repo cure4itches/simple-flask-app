@@ -43,7 +43,7 @@ spec:
         }
       }
     }
-    stage('Build') {
+    stage('Build & Push') {
       steps {
         container(name: 'kaniko', shell: '/busybox/sh') {
           sh "\
